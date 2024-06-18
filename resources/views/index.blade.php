@@ -10,10 +10,8 @@
 <body>
     <div class="container mt-5">
         <h1 class="mb-4">Product List</h1>
-
-        <!-- Form for data submission -->
         <form id="productForm">
-            @csrf <!-- Laravel CSRF protection token -->
+            @csrf
         
             <input type="hidden" id="product-id" name="product_id">
         
@@ -37,7 +35,6 @@
 
         <hr>
 
-        <!-- Product List Table -->
         <table id="productTable" class="table table-bordered">
             <thead>
                 <tr>
@@ -75,96 +72,96 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
         $(document).ready(function () {
-            // Function to load products on page load
-            // Function to load products on page load
-        function loadData() {
-            $.get('/products', function (data) {
-                $('#productTable tbody').empty(); // Clear existing table rows
-                data.forEach(function(product) {
-                    var totalValue = product.quantity_in_stock * product.price_per_item;
-                    var row = '<tr data-id="' + product.id + '">' +
+            function loadData() {
+                $.get('/products')
+                    .done(function (data) {
+                        $('#productTable tbody').empty();
+                        data.forEach(function (product) {
+                            var totalValue = product.quantity_in_stock * product.price_per_item;
+                            var row = '<tr data-id="' + product.id + '">' +
                                 '<td>' + product.product_name + '</td>' +
                                 '<td>' + product.quantity_in_stock + '</td>' +
                                 '<td>$' + product.price_per_item + '</td>' +
                                 '<td>' + product.created_at + '</td>' +
                                 '<td>$' + totalValue.toFixed(2) + '</td>' +
                                 '<td>' +
-                                    '<button class="btn btn-sm btn-info editProduct">Edit</button> ' +
-                                    '<button class="btn btn-sm btn-danger deleteProduct">Delete</button>' +
+                                '<button class="btn btn-sm btn-info editProduct">Edit</button> ' +
+                                '<button class="btn btn-sm btn-danger deleteProduct">Delete</button>' +
                                 '</td>' +
-                            '</tr>';
-                    $('#productTable tbody').append(row); // Append new row to the table
-                });
-                updateSumTotal(data); // Update the total value
-            }).fail(function (xhr, status, error) {
-                console.error('Error loading data:', error);
-                alert('Error loading data. Please try again.');
-            });
-        }
-    
-            // Function to calculate and update sum total
+                                '</tr>';
+                            $('#productTable tbody').append(row);
+                        });
+                        updateSumTotal(data);
+                        $('#error-message').hide();
+                    })
+                    .fail(function (xhr, status, error) {
+                        console.error('Error loading data:', error);
+                        $('#error-message').text('Error loading data. Please try again.').show();
+                    });
+            }
+
+
             function updateSumTotal(products) {
                 var totalSum = products.reduce(function(sum, product) {
                     return sum + (product.quantity_in_stock * product.price_per_item);
                 }, 0);
                 $('#totalValue').text('$' + totalSum.toFixed(2));
             }
-    
-            // Load data on initial page load
+
             loadData();
-    
-            // Handle form submission
+
+            
             $('#productForm').on('submit', function (e) {
                 e.preventDefault();
                 var productName = $('#productName').val();
                 var quantity = $('#quantityInStock').val();
                 var price = $('#pricePerItem').val();
-                var id = $('#product-id').val(); // Product ID for update
-    
-                var url = id ? '/product/' + id : '/products'; // Determine the URL based on presence of ID
-                var method = id ? 'PUT' : 'POST'; // HTTP method for AJAX request
-    
+                var id = $('#product-id').val(); 
+
+                var url = id ? '/product/' + id : '/products'; 
+                var method = id ? 'PUT' : 'POST';
+
                 $.ajax({
                     type: method,
                     url: url,
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
                     data: {
-                        _token: $('meta[name="csrf-token"]').attr('content'),
                         product_name: productName,
                         quantity_in_stock: quantity,
                         price_per_item: price
                     },
-                    success: function () {
+                    success: function (data) {
                         $('#productForm')[0].reset();
-                        $('#product-id').val(''); // Clear product ID after submission
-                        loadData(); // Reload data after submission
+                        $('#product-id').val('');
+                        loadData();
+                        $('#error-message').hide(); 
                     },
                     error: function (xhr, status, error) {
                         console.error('Error saving product:', error);
-                        alert('Error saving product. Please try again.');
+                        $('#error-message').text('Error saving product. Please try again.').show();
                     }
                 });
             });
-    
-            // Handle edit button click
+
             $('#productTable').on('click', '.editProduct', function () {
                 var row = $(this).closest('tr');
                 var id = row.data('id');
                 var productName = row.find('td:eq(0)').text();
                 var quantity = row.find('td:eq(1)').text();
                 var price = row.find('td:eq(2)').text();
-    
-                // Populate form fields with current product data
+
                 $('#product-id').val(id);
                 $('#productName').val(productName);
                 $('#quantityInStock').val(quantity);
                 $('#pricePerItem').val(price);
             });
-    
-            // Handle delete button click
+
             $('#productTable').on('click', '.deleteProduct', function () {
                 var row = $(this).closest('tr');
                 var id = row.data('id');
-    
+
                 if (confirm('Are you sure you want to delete this product?')) {
                     $.ajax({
                         type: 'DELETE',
@@ -174,7 +171,7 @@
                         },
                         success: function () {
                             row.remove();
-                            loadData(); // Reload data after deletion
+                            loadData();
                         },
                         error: function (xhr, status, error) {
                             console.error('Error deleting product:', error);
