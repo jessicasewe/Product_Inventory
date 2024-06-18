@@ -15,7 +15,8 @@ class ProductController extends Controller
      */
     public function index()
     {
-        //
+        $products = Product::all();
+        return view('index', compact('products'));
     }
 
     /**
@@ -36,7 +37,8 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $products = Product::create($request->all());
+        return response()->json($products);
     }
 
     /**
@@ -68,9 +70,11 @@ class ProductController extends Controller
      * @param  \App\Models\Product  $product
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Product $product)
+    public function update(Request $request, $id)
     {
-        //
+        $product = Product::findOrFail($id);
+        $product->update($request->all());
+        return response()->json($product);
     }
 
     /**
