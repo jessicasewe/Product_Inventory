@@ -17,7 +17,7 @@ class CreateProductsTable extends Migration
             $table->id();
             $table->string('product_name', 255);
             $table->integer('quantity_in_stock');
-            $table->integer('price_per_item', 8, 2);
+            $table->integer('price_per_item');
             $table->timestamps();
         });
     }
